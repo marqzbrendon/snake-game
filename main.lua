@@ -13,6 +13,7 @@ function love.load()
         snake.h = 50
         if i == 1 then
             snake.dir = "right"
+            snake.fixed_dir = "right"
         end
         table.insert(snakes, snake)
     end
@@ -23,11 +24,12 @@ function love.load()
         table.insert(current_pos, tuple)
     end
 
-    food = {}
+    foods = {}
+    local food = {}
     food.w = 50
     food.h = 50
-    food.x = math.random(0, 15) * 50
-    food.y = math.random(0, 15) * 50
+    food.x = math.random(1, 15) * 50
+    food.y = math.random(1, 10) * 50
     while true do
         local overlap = overlapPos.checkPos(current_pos, food)
         if not overlap then
@@ -35,25 +37,25 @@ function love.load()
         end
         food.w = 50
         food.h = 50
-        food.x = math.random(0, 15) * 50
-        food.y = math.random(0, 15) * 50
+        food.x = math.random(1, 15) * 50
+        food.y = math.random(1, 10) * 50
     end
-     
+    table.insert(foods, food)
 
     count = 0
     updateDelay = 1
 end
 
 function love.update(dt)
-    count = count + dt -- dt is in seconds
+    count = count + dt
 
-    if love.keyboard.isDown("right") and snakes[1].dir ~= "left" then
+    if love.keyboard.isDown("right") and snakes[1].fixed_dir ~= "left" then
         snakes[1].dir = "right"
-    elseif love.keyboard.isDown("left") and snakes[1].dir ~= "right" then
+    elseif love.keyboard.isDown("left") and snakes[1].fixed_dir ~= "right" then
         snakes[1].dir = "left"
-    elseif love.keyboard.isDown("up") and snakes[1].dir ~= "down" then
+    elseif love.keyboard.isDown("up") and snakes[1].fixed_dir ~= "down" then
         snakes[1].dir = "up"
-    elseif love.keyboard.isDown("down") and snakes[1].dir ~= "up" then
+    elseif love.keyboard.isDown("down") and snakes[1].fixed_dir ~= "up" then
         snakes[1].dir = "down"
     end
 
@@ -85,24 +87,28 @@ function love.update(dt)
                     snakes[i].y = 0
                 end
 
-                if collision.AABB(snakes[i].x, snakes[i].y, snakes[i].w, snakes[i].h, food.x, food.y, food.w, food.h) then
+                snakes[i].fixed_dir = snakes[i].dir
+
+                if collision.AABB(snakes[i].x, snakes[i].y, snakes[i].w, snakes[i].h, foods[1].x, foods[1].y, foods[1].w, foods[1].h) then
+                    if updateDelay > 0.2 then
+                        updateDelay = updateDelay - 0.07
+                    end
                     local snake = {}
-                    snake.x = food.x
-                    snake.y = food.y
-                    snake.w = food.w
-                    snake.h = food.h
+                    snake.x = foods[1].x
+                    snake.y = foods[1].y
+                    snake.w = foods[1].w
+                    snake.h = foods[1].h
                     snake.dir = snakes[i].dir
                     table.insert(snakes, 1, snake)
-                    
-                    while #food > 0 do
-                        table.remove(food)
-                    end
+
+                    local tuple = {snake.x, snake.y}
+                    table.insert(current_pos, tuple)
 
                     local food = {}
                     food.w = 50
                     food.h = 50
-                    food.x = math.random(0, 15) * 50
-                    food.y = math.random(0, 15) * 50
+                    food.x = math.random(1, 15) * 50
+                    food.y = math.random(1, 10) * 50
                     while true do
                         local overlap = overlapPos.checkPos(current_pos, food)
                         if not overlap then
@@ -110,11 +116,10 @@ function love.update(dt)
                         end
                         food.w = 50
                         food.h = 50
-                        food.x = math.random(0, 15) * 50
-                        food.y = math.random(0, 15) * 50
+                        food.x = math.random(1, 15) * 50
+                        food.y = math.random(1, 10) * 50
                     end
-                    table.insert(food, food)
-                    break
+                    table.insert(foods, 1, food)
                 end
 
                 prev_x = snakes[i].x
@@ -143,14 +148,9 @@ end
 
 function love.draw()
     for i = 1, #snakes, 1 do
-        if i == 1 then
-            love.graphics.setColor(255/255, 0/255, 0/255)
-            love.graphics.rectangle("fill", snakes[i].x, snakes[i].y, snakes[i].w, snakes[i].h)
-        else
-            love.graphics.setColor(255/255, 255/255, 255/255)
-            love.graphics.rectangle("fill", snakes[i].x, snakes[i].y, snakes[i].w, snakes[i].h)
-        end
-        love.graphics.setColor(0/255, 255/255, 0/255)
-        love.graphics.rectangle("fill", food.x, food.y, food.w, food.h)
+        love.graphics.setColor(255/255, 0/255, 0/255)   
+        love.graphics.rectangle("fill", snakes[i].x, snakes[i].y, snakes[i].w, snakes[i].h)
     end
+    love.graphics.setColor(0/255, 255/255, 0/255)
+    love.graphics.rectangle("fill", foods[1].x, foods[1].y, foods[1].w, foods[1].h)
 end
